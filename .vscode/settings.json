@@ -1,0 +1,10 @@
+{
+  "todohighlight.keywords": [
+    { "text": "NOTE:", "color": "#FFFFFF", "backgroundColor": "#006644" },
+    { "text": "LINK:", "color": "#FFFFFF", "backgroundColor": "#3389FF" },
+    { "text": "IMPORTANT:", "color": "#FFFFFF", "backgroundColor": "#FF3333" }
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  }
+}
