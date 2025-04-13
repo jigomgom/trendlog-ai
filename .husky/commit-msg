@@ -1,0 +1,52 @@
+#!/bin/sh
+
+ANSI() {
+  case $1 in
+  RED) echo "\x1b[31m" ;;
+  RESET) echo "\x1b[0m" ;;
+  esac
+}
+
+commit_msg_file="$1"
+commit_msg=$(cat "$commit_msg_file")
+
+if grep -qE '^Merge ' "$commit_msg_file"; then
+  exit 0
+fi
+
+branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "HEAD")
+issue_number=$(echo "$branch_name" | grep -oE '#[0-9]+' | sed 's/#//')
+
+if [ -z "$issue_number" ]; then
+  exit 0
+fi
+
+allowed_prefixes="^(feat|setting|bug|docs|chore):"
+
+new_msg=""
+first_line=true
+
+while IFS= read -r line; do
+  if echo "$line" | grep -qE '^\s*$|^\s*#'; then
+    new_msg="$new_msg$line\n"
+  elif [ "$first_line" = true ]; then
+    if ! echo "$line" | grep -qE "$allowed_prefixes"; then
+      echo "$(ANSI RED)❌ 커밋 메시지의 첫 줄은 반드시 다음 prefix 중 하나로 시작해야 합니다:$(ANSI RESET) " >&2
+      echo "$(ANSI RED)   feat:, setting:, bug:, chore:, docs:$(ANSI RESET)" >&2
+      echo ""
+      echo "$(ANSI RED)커밋은 중단되었습니다. 올바른 prefix로 수정해 주세요.$(ANSI RESET)" >&2
+      exit 1
+    else
+      if echo "$line" | grep -qE "#$issue_number"; then
+        new_msg="$new_msg$line\n"
+      else
+        new_msg="$new_msg$line (#$issue_number)\n"
+      fi
+    fi
+    first_line=false
+  else
+    new_msg="$new_msg$line\n"
+  fi
+done <"$commit_msg_file"
+
+printf "%b" "$new_msg" >"$commit_msg_file"
